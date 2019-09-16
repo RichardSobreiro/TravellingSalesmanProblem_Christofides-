@@ -1,11 +1,14 @@
 from os import listdir
 from os.path import isfile, join
 import matplotlib.pyplot as plt
-
 from TSPFile import TSPFile
 
+tsp_files = []
+
 def main():
-    tsp_files = []
+    read_files_compute_distances()
+
+def read_files_compute_distances():
     mypath = 'Instances/EUC_2D'
     filenames = [f for f in listdir(mypath) if isfile(join(mypath, f))]
     for filename in filenames:
@@ -30,7 +33,6 @@ def main():
         plt.title(tsp_file.name)
         plt.show()
         tsp_files.append(tsp_file)
-
 
 if __name__ == '__main__':
     main()
