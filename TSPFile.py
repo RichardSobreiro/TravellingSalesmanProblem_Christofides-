@@ -7,7 +7,7 @@ class TSPFile:
     dimension = 0 
     edge_weight_type = ''
     node_coord_section = ['']
-    distances = [0]
+    adjacency_matrix = [0]
     node_count = [0]
     x_coord = [0]
     y_coord = [0]
@@ -32,20 +32,20 @@ class TSPFile:
         elif 'EDGE_WEIGHT_TYPE' == param:
             self.edge_weight_type = value
         elif 'NODE_COORD_SECTION' == param:
-            self.instantiate_distances_array()
+            self.instantiate_adjacency_matrix()
         else:
             param = param.lstrip().rstrip()
             self.node_coord_section.append(param)
 
-    def instantiate_distances_array(self):
-        self.distances = self.distances * self.dimension
+    def instantiate_adjacency_matrix(self):
+        self.adjacency_matrix = self.adjacency_matrix * self.dimension
         self.node_count = self.node_count * self.dimension
         self.x_coord = self.x_coord * self.dimension
         self.y_coord = self.y_coord * self.dimension
         for i in range(self.dimension):
-            self.distances[i] = [0] * self.dimension
+            self.adjacency_matrix[i] = [0] * self.dimension
     
-    def compute_distances_array(self):
+    def compute_adjacency_matrix(self):
         for i in range(self.dimension):
             [self.node_count[i], self.x_coord[i], self.y_coord[i]] = self.node_coord_section[i].split(' ')
             self.node_count[i] = int(self.node_count[i])
@@ -60,24 +60,24 @@ class TSPFile:
         for i in range(self.dimension):
             for j in range(self.dimension):
                 if i == j:
-                    self.distances[i][j] = 0
+                    self.adjacency_matrix[i][j] = 0
                 else:
                     xd = self.x_coord[i] - self.x_coord[j]
                     yd = self.y_coord[i] - self.y_coord[j]
                     dij = math.sqrt((xd*xd) + (yd*yd))
-                    self.distances[i][j] = round(dij)
+                    self.adjacency_matrix[i][j] = round(dij)
 
     def compute_pseudo_euclidean(self):
         for i in range(self.dimension):
             for j in range(self.dimension):
                 if i == j:
-                    self.distances[i][j] = 0
+                    self.adjacency_matrix[i][j] = 0
                 else:
                     xd = self.x_coord[i] - self.x_coord[j]
                     yd = self.y_coord[i] - self.y_coord[j]
                     rij = math.sqrt(((xd*xd) + (yd*yd))/10)
                     tij = round(rij)
                     if tij < rij:
-                        self.distances[i][j] = tij + 1
+                        self.adjacency_matrix[i][j] = tij + 1
                     else:
-                        self.distances[i][j] = tij
+                        self.adjacency_matrix[i][j] = tij
