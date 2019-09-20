@@ -1,11 +1,14 @@
 import sys
+import matplotlib.pyplot as plt
 
-class PrimAlgorithm(): 
+class PrimAlgorithm: 
 
 	def __init__(self, vertices): 
-		self.V = vertices 
-		self.graph = [[0 for column in range(vertices)] 
-					for row in range(vertices)] 
+		self.V = len(vertices[0])
+		self.graph = vertices
+		# self.V = vertices 
+		# self.graph = [[0 for column in range(vertices)] 
+		# 			for row in range(vertices)] 
 
 	def printMST(self, parent): 
 		print("Edge \tWeight")
@@ -45,3 +48,4 @@ class PrimAlgorithm():
 						parent[v] = u 
 
 		self.printMST(parent) 
+		return parent

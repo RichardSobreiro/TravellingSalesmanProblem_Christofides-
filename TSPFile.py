@@ -49,8 +49,8 @@ class TSPFile:
         for i in range(self.dimension):
             [self.node_count[i], self.x_coord[i], self.y_coord[i]] = self.node_coord_section[i].split(' ')
             self.node_count[i] = int(self.node_count[i])
-            self.x_coord[i] = float(self.x_coord[i])
-            self.y_coord[i] = float(self.y_coord[i])
+            self.x_coord[i] = round(float(self.x_coord[i]), 1)
+            self.y_coord[i] = round(float(self.y_coord[i]), 1)
         if 'EUC_2D' in self.edge_weight_type:
             self.compute_euclidean()
         else:
@@ -78,6 +78,6 @@ class TSPFile:
                     rij = math.sqrt(((xd*xd) + (yd*yd))/10)
                     tij = round(rij)
                     if tij < rij:
-                        self.adjacency_matrix[i][j] = tij + 1
+                        self.adjacency_matrix[i][j] = round((tij + 1), 1)
                     else:
-                        self.adjacency_matrix[i][j] = tij
+                        self.adjacency_matrix[i][j] = round(tij, 1)
