@@ -15,7 +15,7 @@ def find_odd_degree_nodes(tsp_file, minimum_spanning_tree):
     for i in range(tsp_file.dimension):
         count_degree = 0
         for j in range(tsp_file.dimension):
-            if minimum_spanning_tree[j] == i:
+            if (minimum_spanning_tree[j] == i) or (minimum_spanning_tree[i] == j):
                 count_degree += 1
         if (count_degree % 2) == 1:
             odd_degree_nodes.append(i)
@@ -79,7 +79,7 @@ def read_files_compute_minimum_path():
                 else:
                     subgraph_odd_degree_nodes[i][j] = tsp_file.adjacency_matrix[i][j]
         
-        #Construct a minimum-weight perfect matching M in this subgraph
+        # Construct a minimum-weight perfect matching M in this subgraph
         matching  = [False] * tsp_file.dimension
         for i in range(tsp_file.dimension):
             matching[i] = [False] * tsp_file.dimension
@@ -105,6 +105,28 @@ def read_files_compute_minimum_path():
         plt.figure()
 
         # Unite matching and spanning tree T ∪ M to form an Eulerian multigraph
+        spanning_tree_union_matching  = [False] * tsp_file.dimension
+        for i in range(tsp_file.dimension):
+            spanning_tree_union_matching[i] = [False] * tsp_file.dimension
+
+        for i in range(tsp_file.dimension):
+            for j in range(tsp_file.dimension):
+                if matching[i][j] == True:
+                    spanning_tree_union_matching[i][j] = True
+                if (minimum_spanning_tree[i] == j) or minimum_spanning_tree[j] == i:
+                    spanning_tree_union_matching[i][j] = True
+
+        for i in range(tsp_file.dimension):
+            plt.plot(tsp_file.x_coord[i], tsp_file.y_coord[i], 'ro')
+            plt.annotate(str(i), (tsp_file.x_coord[i], tsp_file.y_coord[i]))
+            for j in range(tsp_file.dimension):
+                if spanning_tree_union_matching[i][j] == True:
+                    plt.plot([tsp_file.x_coord[i], tsp_file.x_coord[j]],[tsp_file.y_coord[i], tsp_file.y_coord[j]],'k-')
+        plt.title(tsp_file.name + ' - MST U Perfect Matching')
+        plt.figure()
+
+        # Calculate Euler tour
+        
 
         plt.show()
         #tsp_files.append(tsp_file)
