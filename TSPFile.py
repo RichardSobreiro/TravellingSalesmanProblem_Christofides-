@@ -47,7 +47,7 @@ class TSPFile:
     
     def compute_adjacency_matrix(self):
         for i in range(self.dimension):
-            [self.node_count[i], self.x_coord[i], self.y_coord[i]] = self.node_coord_section[i].split(' ')
+            [self.node_count[i], self.x_coord[i], self.y_coord[i]] = self.node_coord_section[i].split()
             self.node_count[i] = int(self.node_count[i])
             self.x_coord[i] = round(float(self.x_coord[i]), 1)
             self.y_coord[i] = round(float(self.y_coord[i]), 1)
