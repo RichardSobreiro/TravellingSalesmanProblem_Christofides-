@@ -7,12 +7,15 @@ import time
 import matplotlib.pyplot as plt
 from TSPFile import TSPFile
 from PrimAlgorithm import PrimAlgorithm
+from copy import copy, deepcopy
 
 # Flag that controls if intermediary plots showing each steps of the 
 # Christofides should be printed or not
 # Flag que controle se gráficos intermediários mostrando cada etapa do 
 # algortimo de Christofides devem ser exibidos ou não
 show_intermediary_steps_graphs = True
+source_indexes_visited = []
+best_destiny_indexes_visited = []
 
 def main():
     # Read all instances and store it in an array of TSPFile objects
@@ -20,7 +23,19 @@ def main():
 
     # For each instance apply some heuristic based on christofides algorithm
     for tsp_file in tsp_files:
-        christofides(tsp_file)
+        pairs_visited = [False] * tsp_file.dimension
+        for i in range(tsp_file.dimension):
+            pairs_visited[i] = [False] * tsp_file.dimension
+
+        start_time = time.time()
+
+        euler_cycle = christofides(tsp_file)
+
+        variable_neighborhood_descent(tsp_file, euler_cycle, 50, 0, pairs_visited)
+
+        elapsed_time = time.time() - start_time
+
+        show_final_solution(tsp_file, euler_cycle, elapsed_time)
 
 def compute_tsp_instances():
     tsp_files = np.array([])
@@ -122,6 +137,71 @@ def christofides(tsp_file):
 
     elapsed_time = time.time() - start_time
 
+    return euler_cycle
+
+def variable_neighborhood_descent(tsp_file, euler_cycle, neighborhoods_max, time_limit, pairs_visited):
+    n = 0
+    current_cost = 0
+    best_cost = euler_tour_cost(tsp_file, euler_cycle)
+
+    while n <= neighborhoods_max:
+        i = i + 1
+        euler_cycle_neighbor = choose_most_improving_neighbour(tsp_file, euler_cycle, pairs_visited)
+        current_cost = euler_tour_cost(tsp_file, euler_cycle_neighbor)
+        if current_cost < best_cost:
+            best_cost = current_cost
+            euler_cycle = euler_cycle_neighbor
+
+def euler_tour_cost(tsp_file, euler_cycle):
+    cost = 0
+    for i in range(tsp_file.dimension):
+        for j in range(tsp_file.dimension):
+            if euler_cycle[i][j] == True:
+                cost += tsp_file.adjacency_matrix[i][j]
+    return cost
+
+def choose_most_improving_neighbour(tsp_file, euler_cycle, pairs_visited):
+    index_1 = 0
+    index_2 = 0
+    best_index_destiny_1 = 0
+    best_index_source_2 = 0
+    max_distance = 0
+    for i in range(tsp_file.dimension):
+        for j in range(tsp_file.dimension):
+            if (euler_cycle[i][j] == True) and (max_distance < tsp_file.adjacency_matrix[i][j]):
+                max_distance = tsp_file.adjacency_matrix[i][j]
+                index_1 = i
+                index_2 = j
+
+    min_distance_index_1 = sys.maxsize
+    for j in range(tsp_file.dimension):
+        if (euler_cycle[i][j] == False) and (tsp_file.adjacency_matrix[index_1][j] < min_distance_index_1) and (pairs_visited[index_1][j] == False):
+            min_distance_index_1 = tsp_file.adjacency_matrix[index_1][j]
+            best_index_destiny_1 = j
+
+    euler_cycle_neighbor = deepcopy(euler_cycle)
+    euler_cycle_neighbor[index_1][index_2] = False
+    euler_cycle_neighbor[index_1][best_index_destiny_1] = True
+
+    best_index_destiny_1_destiny = 0
+    for i in range(tsp_file.dimension):
+        for j in range(tsp_file.dimension):
+            if (best_index_destiny_1 == i) and (euler_cycle[i][j] == True):
+                euler_cycle_neighbor[i][j] = False
+                best_index_destiny_1_destiny = j
+            if (best_index_destiny_1 == j) and (euler_cycle[i][j] == True):
+                euler_cycle_neighbor[i][j] = False
+                best_index_destiny_1_destiny = j
+            
+    euler_cycle_neighbor[best_index_destiny_1][index_2] = True
+    euler_cycle_neighbor[index_2][best_index_destiny_1_destiny] = True
+
+    pairs_visited[index_1][best_index_destiny_1] = True
+    return euler_cycle_neighbor
+
+
+
+def show_final_solution(tsp_file, euler_cycle, elapsed_time):
     cost = 0
     for i in range(tsp_file.dimension):
         plt.plot(tsp_file.x_coord[i], tsp_file.y_coord[i], 'ro')
