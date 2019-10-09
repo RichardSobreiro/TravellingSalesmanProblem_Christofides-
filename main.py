@@ -142,7 +142,7 @@ def variable_neighborhood_descent(tsp_file, euler_cycle, neighborhoods_max, time
     current_cost = 0
     best_cost = euler_tour_cost(tsp_file, euler_cycle)
 
-    while n <= 1:
+    while n <= 0:
         n += 1
         euler_cycle_neighbor = choose_most_improving_neighbour(tsp_file, euler_cycle, pairs_visited)
         current_cost = euler_tour_cost(tsp_file, euler_cycle_neighbor)
@@ -197,20 +197,29 @@ def choose_most_improving_neighbour(tsp_file, euler_cycle, pairs_visited):
                 euler_cycle_neighbor[i][j] = False
                 best_node_root_node_destiny = j
             if i != j and (best_node_root_node == j) and (euler_cycle[i][j] == True):
-                euler_cycle_neighbor[i][j] = False
+                #euler_cycle_neighbor[i][j] = False
                 best_node_root_node_source = i
             
     # euler_cycle_neighbor[best_node_root_node][destiny_node_worst_edge] = True
     # euler_cycle_neighbor[destiny_node_worst_edge][best_index_destiny_1_destiny] = True
-    euler_cycle_neighbor[best_node_root_node_source][best_node_root_node] = True
-    euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_destiny] = True
+    # euler_cycle_neighbor[best_node_root_node_source][best_node_root_node] = True
+    # euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_destiny] = True
+    euler_cycle_neighbor[best_node_root_node_destiny][destiny_node_worst_edge] = True
+    euler_cycle_neighbor[best_node_root_node][best_node_root_node_destiny] = False
 
     if has_sub_tours(tsp_file, euler_cycle_neighbor):
-        euler_cycle_neighbor[best_node_root_node][best_node_root_node_source] = False
-        euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_destiny] = False
+        print('Tem sub tour')
+        euler_cycle_neighbor[best_node_root_node_destiny][destiny_node_worst_edge] = True
+        euler_cycle_neighbor[best_node_root_node][best_node_root_node_destiny] = False
+    else:
+        print('Nao tem sub tour')
 
-        euler_cycle_neighbor[best_node_root_node][best_node_root_node_destiny] = True
-        euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_source] = True
+    # if has_sub_tours(tsp_file, euler_cycle_neighbor):
+    #     euler_cycle_neighbor[best_node_root_node][best_node_root_node_source] = False
+    #     euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_destiny] = False
+
+    #     euler_cycle_neighbor[best_node_root_node][best_node_root_node_destiny] = True
+    #     euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_source] = True
 
     pairs_visited[root_node_worst_edge][best_node_root_node] = True
     return euler_cycle_neighbor
