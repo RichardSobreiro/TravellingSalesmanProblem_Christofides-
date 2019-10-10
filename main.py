@@ -26,12 +26,14 @@ def main():
         pairs_visited = [False] * tsp_file.dimension
         for i in range(tsp_file.dimension):
             pairs_visited[i] = [False] * tsp_file.dimension
+        
+        roots_visited = [False] * tsp_file.dimension
 
         start_time = time.time()
 
         euler_cycle = christofides(tsp_file)
 
-        euler_cycle = variable_neighborhood_descent(tsp_file, euler_cycle, 50, 0, pairs_visited)
+        euler_cycle = variable_neighborhood_descent(tsp_file, euler_cycle, 500, pairs_visited, roots_visited)
 
         elapsed_time = time.time() - start_time
 
@@ -136,15 +138,17 @@ def christofides(tsp_file):
 
     return euler_cycle
 
-def variable_neighborhood_descent(tsp_file, euler_cycle, neighborhoods_max, time_limit, pairs_visited):
+def variable_neighborhood_descent(tsp_file, euler_cycle, neighborhoods_max, pairs_visited, roots_visited):
     n = 0 
     i = 0
     current_cost = 0
     best_cost = euler_tour_cost(tsp_file, euler_cycle)
 
-    while n <= 0:
+    neighborhoods_max = 100
+
+    while n <= neighborhoods_max:
         n += 1
-        euler_cycle_neighbor = choose_most_improving_neighbour(tsp_file, euler_cycle, pairs_visited)
+        euler_cycle_neighbor = choose_most_improving_neighbour(tsp_file, euler_cycle, n, pairs_visited, roots_visited, best_cost)
         current_cost = euler_tour_cost(tsp_file, euler_cycle_neighbor)
         if current_cost < best_cost:
             best_cost = current_cost
@@ -160,7 +164,7 @@ def euler_tour_cost(tsp_file, euler_cycle):
                 cost += tsp_file.adjacency_matrix[i][j]
     return cost
 
-def choose_most_improving_neighbour(tsp_file, euler_cycle, pairs_visited):
+def choose_most_improving_neighbour(tsp_file, euler_cycle, current_iteration, pairs_visited, roots_visited, best_cost):
     root_node_worst_edge = 0
     destiny_node_worst_edge = 0
     best_node_root_node = 0
@@ -168,7 +172,7 @@ def choose_most_improving_neighbour(tsp_file, euler_cycle, pairs_visited):
     max_distance = 0
     for i in range(tsp_file.dimension):
         for j in range(tsp_file.dimension):
-            if i != j and (euler_cycle[i][j] == True) and (max_distance < tsp_file.adjacency_matrix[i][j]):
+            if i != j and (euler_cycle[i][j] == True) and (max_distance < tsp_file.adjacency_matrix[i][j]) and roots_visited[i] == False:
                 max_distance = tsp_file.adjacency_matrix[i][j]
                 root_node_worst_edge = i
                 destiny_node_worst_edge = j
@@ -179,79 +183,63 @@ def choose_most_improving_neighbour(tsp_file, euler_cycle, pairs_visited):
             min_distance_index_1 = tsp_file.adjacency_matrix[root_node_worst_edge][j]
             best_node_root_node = j
 
-    if has_sub_tours(tsp_file, euler_cycle):
-        print('Tem sub tour')
-    else:
-        print('Nao tem sub tour')
-
     euler_cycle_neighbor = deepcopy(euler_cycle)
     euler_cycle_neighbor[root_node_worst_edge][destiny_node_worst_edge] = False
     euler_cycle_neighbor[root_node_worst_edge][best_node_root_node] = True
 
-    #best_index_destiny_1_destiny = 0
     best_node_root_node_source = 0
     best_node_root_node_destiny = 0
     for i in range(tsp_file.dimension):
         for j in range(tsp_file.dimension):
             if i != j and (best_node_root_node == i) and (euler_cycle[i][j] == True):
-                euler_cycle_neighbor[i][j] = False
                 best_node_root_node_destiny = j
             if i != j and (best_node_root_node == j) and (euler_cycle[i][j] == True):
-                #euler_cycle_neighbor[i][j] = False
                 best_node_root_node_source = i
-            
-    # euler_cycle_neighbor[best_node_root_node][destiny_node_worst_edge] = True
-    # euler_cycle_neighbor[destiny_node_worst_edge][best_index_destiny_1_destiny] = True
+
+    best_node_root_node_next = 0
+    for j in range(tsp_file.dimension):
+        if euler_cycle_neighbor[best_node_root_node][j] == True:
+           best_node_root_node_next = j 
+
+    best_node_root_node_next_next = 0
+    for j in range(tsp_file.dimension):
+        if euler_cycle_neighbor[best_node_root_node_next][j] == True:
+           best_node_root_node_next_next = j
+
+    euler_cycle_neighbor[best_node_root_node_next][best_node_root_node_next_next] = False
+    euler_cycle_neighbor[best_node_root_node_source][best_node_root_node] = False
+    euler_cycle_neighbor[best_node_root_node_source][best_node_root_node_next_next] = True
+    euler_cycle_neighbor[best_node_root_node_next][destiny_node_worst_edge] = True
+        
+    current_cost = euler_tour_cost(tsp_file, euler_cycle_neighbor)
+        if current_cost < best_cost:
+            best_cost = current_cost
+            pairs_visited[root_node_worst_edge][best_node_root_node] = True
+            if current_iteration == tsp_file.dimension:
+                roots_visited[root_node_worst_edge] = True
+            return euler_cycle_neighbor
+    
+    # euler_cycle_neighbor[best_node_root_node_next][best_node_root_node_next_next] = True
     # euler_cycle_neighbor[best_node_root_node_source][best_node_root_node] = True
-    # euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_destiny] = True
-    euler_cycle_neighbor[best_node_root_node_destiny][destiny_node_worst_edge] = True
-    euler_cycle_neighbor[best_node_root_node][best_node_root_node_destiny] = False
+    # euler_cycle_neighbor[best_node_root_node_source][best_node_root_node_next_next] = False
+    # euler_cycle_neighbor[best_node_root_node_next][destiny_node_worst_edge] = False
 
-    if has_sub_tours(tsp_file, euler_cycle_neighbor):
-        print('Tem sub tour')
-        euler_cycle_neighbor[best_node_root_node_destiny][destiny_node_worst_edge] = True
-        euler_cycle_neighbor[best_node_root_node][best_node_root_node_destiny] = False
-    else:
-        print('Nao tem sub tour')
+    # best_node_root_node_previos = 0
+    # for j in range(tsp_file.dimension):
+    #     if euler_cycle_neighbor[j][best_node_root_node] == True:
+    #        best_node_root_node_previos = j 
 
-    # if has_sub_tours(tsp_file, euler_cycle_neighbor):
-    #     euler_cycle_neighbor[best_node_root_node][best_node_root_node_source] = False
-    #     euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_destiny] = False
+    # best_node_root_node_previos_previos = 0
+    # for j in range(tsp_file.dimension):
+    #     if euler_cycle_neighbor[j][best_node_root_node_previos_previos] == True:
+    #        best_node_root_node_previos_previos = j
 
-    #     euler_cycle_neighbor[best_node_root_node][best_node_root_node_destiny] = True
-    #     euler_cycle_neighbor[destiny_node_worst_edge][best_node_root_node_source] = True
+    # euler_cycle_neighbor[best_node_root_node_previos_previos][best_node_root_node_previos] = False
+    # euler_cycle_neighbor[best_node_root_node][best_node_root_node_previos] = False
+    # euler_cycle_neighbor[best_node_root_node_source][best_node_root_node_previos_previos] = True
+    # euler_cycle_neighbor[best_node_root_node_next][destiny_node_worst_edge] = True
 
-    pairs_visited[root_node_worst_edge][best_node_root_node] = True
-    return euler_cycle_neighbor
-
-def has_sub_tours(tsp_file, euler_cycle):
-    root = 0
-    current_node = root
-    predecessor_node = -1
-    possible_next_node_1 = 0
-    possible_next_node_2 = 0
-    iterations = 0
-    while True:
-        for i in range(tsp_file.dimension):
-            if euler_cycle[current_node][i] == True:
-                possible_next_node_1 = i
-            if euler_cycle[i][current_node] == True:
-                possible_next_node_2 = i   
-             
-        if possible_next_node_1 == predecessor_node:
-            predecessor_node = current_node
-            current_node = possible_next_node_2
-        else:
-            predecessor_node = current_node
-            current_node = possible_next_node_1
-        iterations += 1
-        if current_node == root or iterations >= tsp_file.dimension + 1:
-            break
-
-    if iterations >= tsp_file.dimension:
-        return False
-    else:
-        return True
+    return euler_cycle
 
 def show_final_solution(tsp_file, euler_cycle, elapsed_time):
     cost = 0
