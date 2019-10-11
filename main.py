@@ -23,20 +23,27 @@ def main():
 
     # For each instance apply some heuristic based on christofides algorithm
     for tsp_file in tsp_files:
+        # Set of expensive edges visited
         pairs_visited = [False] * tsp_file.dimension
         for i in range(tsp_file.dimension):
             pairs_visited[i] = [False] * tsp_file.dimension
         
+        # Set of root nodes visited
         roots_visited = [False] * tsp_file.dimension
 
+        # Capture the initial time
         start_time = time.time()
 
+        # Get the cycle by christofides's algorithms
         euler_cycle = christofides(tsp_file)
 
-        euler_cycle = variable_neighborhood_descent(tsp_file, euler_cycle, 500, pairs_visited, roots_visited)
+        # Apply a metaheuristic (VND) to improve the current solution
+        euler_cycle = variable_neighborhood_descent(tsp_file, euler_cycle, 100, pairs_visited, roots_visited)
 
+        # Capture the final time
         elapsed_time = time.time() - start_time
 
+        # Present the final solution for the user
         show_final_solution(tsp_file, euler_cycle, elapsed_time)
 
 def compute_tsp_instances():
@@ -139,16 +146,18 @@ def christofides(tsp_file):
     return euler_cycle
 
 def variable_neighborhood_descent(tsp_file, euler_cycle, neighborhoods_max, pairs_visited, roots_visited):
+    # Initialize control parameters and get the cost of the christofides solution
     n = 0 
     i = 0
     current_cost = 0
     best_cost = euler_tour_cost(tsp_file, euler_cycle)
 
-    neighborhoods_max = 100
-
+    # Perform a given number of tries to improve the current solution
+    # Another neighborhods are visited and only those which improve the current solution are 
+    # accepted
     while n <= neighborhoods_max:
         n += 1
-        euler_cycle_neighbor = choose_most_improving_neighbour(tsp_file, euler_cycle, n, pairs_visited, roots_visited, best_cost)
+        euler_cycle_neighbor = choose_most_improving_neighbour(tsp_file, euler_cycle, n, pairs_visited, roots_visited)
         current_cost = euler_tour_cost(tsp_file, euler_cycle_neighbor)
         if current_cost < best_cost:
             best_cost = current_cost
@@ -164,7 +173,14 @@ def euler_tour_cost(tsp_file, euler_cycle):
                 cost += tsp_file.adjacency_matrix[i][j]
     return cost
 
-def choose_most_improving_neighbour(tsp_file, euler_cycle, current_iteration, pairs_visited, roots_visited, best_cost):
+# That function always choose the most expensive edge not already visited to improve
+# It removes that connection and connect the root node (root_node_worst_edge) with the best node to him
+# than it removes the antepenult connection to the (best_node_root_node)
+# Than it connects the root node of the removed connection (best_node_root_node_next) with the node destiny of the
+# most expensive edge (destiny_node_worst_edge) and connects the destiny node of the removed connection (best_node_root_node_next_next)
+# with the node previos of the best node of the root node 
+# If that move improves the solution it is accepted as current solution
+def choose_most_improving_neighbour(tsp_file, euler_cycle, current_iteration, pairs_visited, roots_visited):
     root_node_worst_edge = 0
     destiny_node_worst_edge = 0
     best_node_root_node = 0
@@ -210,36 +226,13 @@ def choose_most_improving_neighbour(tsp_file, euler_cycle, current_iteration, pa
     euler_cycle_neighbor[best_node_root_node_source][best_node_root_node] = False
     euler_cycle_neighbor[best_node_root_node_source][best_node_root_node_next_next] = True
     euler_cycle_neighbor[best_node_root_node_next][destiny_node_worst_edge] = True
-        
-    current_cost = euler_tour_cost(tsp_file, euler_cycle_neighbor)
-        if current_cost < best_cost:
-            best_cost = current_cost
-            pairs_visited[root_node_worst_edge][best_node_root_node] = True
-            if current_iteration == tsp_file.dimension:
-                roots_visited[root_node_worst_edge] = True
-            return euler_cycle_neighbor
-    
-    # euler_cycle_neighbor[best_node_root_node_next][best_node_root_node_next_next] = True
-    # euler_cycle_neighbor[best_node_root_node_source][best_node_root_node] = True
-    # euler_cycle_neighbor[best_node_root_node_source][best_node_root_node_next_next] = False
-    # euler_cycle_neighbor[best_node_root_node_next][destiny_node_worst_edge] = False
 
-    # best_node_root_node_previos = 0
-    # for j in range(tsp_file.dimension):
-    #     if euler_cycle_neighbor[j][best_node_root_node] == True:
-    #        best_node_root_node_previos = j 
+    pairs_visited[root_node_worst_edge][best_node_root_node] = True
 
-    # best_node_root_node_previos_previos = 0
-    # for j in range(tsp_file.dimension):
-    #     if euler_cycle_neighbor[j][best_node_root_node_previos_previos] == True:
-    #        best_node_root_node_previos_previos = j
+    if current_iteration == tsp_file.dimension:
+        roots_visited[root_node_worst_edge] = True
 
-    # euler_cycle_neighbor[best_node_root_node_previos_previos][best_node_root_node_previos] = False
-    # euler_cycle_neighbor[best_node_root_node][best_node_root_node_previos] = False
-    # euler_cycle_neighbor[best_node_root_node_source][best_node_root_node_previos_previos] = True
-    # euler_cycle_neighbor[best_node_root_node_next][destiny_node_worst_edge] = True
-
-    return euler_cycle
+    return euler_cycle_neighbor
 
 def show_final_solution(tsp_file, euler_cycle, elapsed_time):
     cost = 0
