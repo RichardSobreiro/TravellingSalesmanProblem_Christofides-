@@ -6,7 +6,8 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from TSPFile import TSPFile
-from PrimAlgorithm import PrimAlgorithm
+from primalgorithm import PrimAlgorithm
+from tabusearch import TabuSearch
 from copy import copy, deepcopy
 
 # Flag that controls if intermediary plots showing each steps of the 
@@ -37,8 +38,13 @@ def main():
         # Get the cycle by christofides's algorithms
         euler_cycle = christofides(tsp_file)
 
-        # Apply a metaheuristic (VND) to improve the current solution
+        # Apply a Variable Neighborhood Descent metaheuristic to improve the current solution
         euler_cycle = variable_neighborhood_descent(tsp_file, euler_cycle, 100, pairs_visited, roots_visited)
+
+        # Apply a Tabu Search metaheuristic to improve the current solution
+        memory_size = tsp_file.dimension
+        tabu_search_algorithm = TabuSearch(memory_size, tsp_file, euler_cycle)
+        euler_cycle = tabu_search_algorithm.tabu_search()
 
         # Capture the final time
         elapsed_time = time.time() - start_time
