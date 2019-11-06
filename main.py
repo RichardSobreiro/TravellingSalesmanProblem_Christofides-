@@ -5,10 +5,12 @@ import sys
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+from copy import copy, deepcopy
+
 from TSPFile import TSPFile
 from primalgorithm import PrimAlgorithm
 from tabusearch import TabuSearch
-from copy import copy, deepcopy
+from grasp import grasp
 
 # Flag that controls if intermediary plots showing each steps of the 
 # Christofides should be printed or not
@@ -45,6 +47,10 @@ def main():
         memory_size = tsp_file.dimension
         tabu_search_algorithm = TabuSearch(memory_size, tsp_file, euler_cycle)
         euler_cycle = tabu_search_algorithm.tabu_search()
+
+        # Apply a Greedy Randomized Adaptative Search Procedure Meteheuristic to improve current solution
+        grasp_instance = grasp(tsp_file, euler_cycle)
+        euler_cycle = grasp_instance.grasp()
 
         # Capture the final time
         elapsed_time = time.time() - start_time
