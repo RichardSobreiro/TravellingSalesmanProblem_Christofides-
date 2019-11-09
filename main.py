@@ -11,6 +11,7 @@ from TSPFile import TSPFile
 from primalgorithm import PrimAlgorithm
 from tabusearch import TabuSearch
 from grasp import grasp
+from ils import ils
 
 # Flag that controls if intermediary plots showing each steps of the 
 # Christofides should be printed or not
@@ -48,9 +49,16 @@ def main():
         tabu_search_algorithm = TabuSearch(memory_size, tsp_file, euler_cycle)
         euler_cycle = tabu_search_algorithm.tabu_search()
 
-        # Apply a Greedy Randomized Adaptative Search Procedure Meteheuristic to improve current solution
+        # # Apply a Greedy Randomized Adaptative Search Procedure Meteheuristic to improve current solution
         grasp_instance = grasp(tsp_file, euler_cycle)
         euler_cycle = grasp_instance.grasp()
+
+        # Apply a Iterated Local Search Meteheuristic to improve current solution.
+        # The perturbation function works 2 minutes in an attempt to improve current solution.
+        # It apply a cut with a fixed length in current solution and apply a nearest neighborhood 
+        # heuristic in the nodes inside that cut.
+        ils_instance = ils(tsp_file, euler_cycle)
+        euler_cycle = ils_instance.ils()
 
         # Capture the final time
         elapsed_time = time.time() - start_time
@@ -257,8 +265,8 @@ def show_final_solution(tsp_file, euler_cycle, elapsed_time):
                 cost += tsp_file.adjacency_matrix[i][j]
                 plt.plot([tsp_file.x_coord[i], tsp_file.x_coord[j]],[tsp_file.y_coord[i], tsp_file.y_coord[j]],'k-')
     plt.title(tsp_file.name + ' - Algorithm\'s output (Cost = '+ str(cost) + '| Elapsed time = ' + str(round(elapsed_time, 5)) + ')')
-
-    plt.show()
+    print('Instance: ' + str(tsp_file.name) + '- Cost: ' + str(cost) + ' - Elapsed time = ' + str(round(elapsed_time, 5)))
+    #plt.show()
 
 def compute_minimum_spanning_tree(tsp_file):
     prim_algorithm = PrimAlgorithm(tsp_file.adjacency_matrix)

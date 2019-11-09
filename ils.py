@@ -9,32 +9,91 @@ class ils:
         self.tsp_file = tsp_file
         self.best_solution = self.convert_from_true_false_matrix(best_solution)
         self.best_solution_cost = self.compute_cost(self.best_solution)
-        self.begin_node_search_history = []
-        self.end_node_search_history = []
-        self.stretch_search_history = []
+        self.begin_end_nodes_history = { }
 
     def ils(self):
-        start_time = time.time()
-        elapsed_time = 0
+        iterations = 0
 
-        while elapsed_time <= 120:
-            candidate_solution = self.perturbation()
+        while iterations <= 500:
+            candidate_solution = self.perturbation(self.best_solution)
             candidate_solution = self.local_search(candidate_solution)
             candidate_solution_cost = self.compute_cost(candidate_solution)
 
             if candidate_solution_cost < self.best_solution_cost:
                 self.best_solution = candidate_solution
                 self.best_solution_cost = candidate_solution_cost
-            elapsed_time = time.time() - start_time
+
+            iterations += 1
 
         return self.convert_from_integer_array_to_true_false_matrix(self.best_solution)
 
-    def perturbation(self):
-        candidate_solution = deepcopy(candidate_solution)
-        nodes = numpy.random.random_integers(0, 10, size=(1, 2))
-        node_1 = nodes[0][0]
-        
-        return candidate_solution
+    def perturbation(self, best_solution):
+        new_candidate_solution = deepcopy(best_solution)
+        begin_node_cut = -1
+        end_node_cut = -1
+        nodes_in_window = []
+
+        begin_end_nodes_pair_not_used_yet = False
+        while begin_end_nodes_pair_not_used_yet == False:
+            nodes = numpy.random.random_integers(4, 20, size=(1, 1))
+            window_cut_size = nodes[0][0]
+            
+            nodes = numpy.random.random_integers(0, (self.tsp_file.dimension - 1), size=(1, 1))
+            begin_node_cut = nodes[0][0]
+            current_node = new_candidate_solution[begin_node_cut]
+
+            nodes_in_window.append(current_node)
+            for i in range(window_cut_size):
+                next_node = new_candidate_solution[current_node]
+                new_candidate_solution[current_node] = -1
+                nodes_in_window.append(next_node)
+                current_node = next_node
+            
+            end_node_cut = nodes_in_window[window_cut_size]
+            nodes_in_window.pop(window_cut_size)
+
+            if (begin_node_cut in self.begin_end_nodes_history) and self.begin_end_nodes_history[begin_node_cut] == end_node_cut:
+                begin_end_nodes_pair_not_used_yet = False
+            else:
+                begin_end_nodes_pair_not_used_yet = True                
+
+        self.begin_end_nodes_history[begin_node_cut] = end_node_cut
+
+        current_node = new_candidate_solution[begin_node_cut]
+        nodes_already_linked = []
+        while len(nodes_in_window) != 0:
+            index_closest_node_in_window = -1
+            min_distance = sys.maxsize
+            for i in range(len(nodes_in_window)):
+                possible_next_node = nodes_in_window[i]
+                distance = self.tsp_file.adjacency_matrix[current_node][possible_next_node]
+                if distance > 0 and distance < min_distance and \
+                    new_candidate_solution[nodes_in_window[i]] == -1:
+                    index_closest_node_in_window = i
+                    min_distance = distance
+            
+            if index_closest_node_in_window != -1:
+                if nodes_in_window[index_closest_node_in_window] in nodes_already_linked:
+                    current_node = nodes_in_window[index_closest_node_in_window]
+                    nodes_in_window.pop(index_closest_node_in_window)
+                else:
+                    new_candidate_solution[current_node] = nodes_in_window[index_closest_node_in_window] 
+                    nodes_already_linked.append(nodes_in_window[index_closest_node_in_window])
+                    nodes_in_window.pop(0)
+                    if len(nodes_in_window) > 0:
+                        current_node = nodes_in_window[0]
+            else:
+                if len(nodes_in_window) == 1:
+                    new_candidate_solution[current_node] = end_node_cut
+                    current_node = end_node_cut
+                    nodes_in_window.pop(0)
+                else:
+                    break
+
+        if self.has_sub_tour(new_candidate_solution):
+            return self.best_solution
+        else:
+            return new_candidate_solution
 
     def local_search(self, candidate_solution):
         generated_solutions = [0] * 20
@@ -70,24 +129,6 @@ class ils:
             
         return generated_solutions[index_smaller_cost]
 
-    def line_intersection(line1, line2):
-        xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-        ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
-        def det(a, b):
-            return a[0] * b[1] - a[1] * b[0]
-
-        div = det(xdiff, ydiff)
-        if div == 0:
-            return False
-        else:
-            return True
-
-        # d = (det(*line1), det(*line2))
-        # x = det(d, xdiff) / div
-        # y = det(d, ydiff) / div
-        # return x, y
-
     def compute_cost(self, solution):
         cost = 0
         next = 0
@@ -118,3 +159,17 @@ class ils:
                     result[i][j] = True
                     break
         return result
+    
+    def has_sub_tour(self, solution):
+        next = 0
+        j = 1
+        while j <= self.tsp_file.dimension:
+            next = solution[next]
+            if(next == 0):
+                break
+            j += 1
+
+        if j != self.tsp_file.dimension:
+            return True
+        else:
+            return False
